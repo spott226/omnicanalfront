@@ -722,7 +722,7 @@ function Settings({notify,onSuper,initialTab="Organización"}:{notify:(s:string)
   </div></div></section>
 }
 
-const planName = (plan: string) => plan === "STARTER" ? "Starter" : plan === "PRO" ? "Growth" : "Advanced";
+const planName = (plan: string) => plan === "MICRO" ? "Micro" : plan === "STARTER" ? "Starter" : plan === "PRO" ? "Growth" : "Advanced";
 const intervalName = (interval: string) => interval === "YEARLY" ? "anual" : "mensual";
 const priceText = (plan: Pick<PlanPrice,"amountCents"|"currency"|"interval">) => `${plan.currency} ${(plan.amountCents/100).toLocaleString("es-MX")}${plan.interval==="YEARLY"?"/ano":"/mes"}`;
 
