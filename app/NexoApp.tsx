@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { api, type ActiveSessionInfo, type ApiContact, type ApiConversation, type ApiDashboard, type ApiMessage, type AuditLogInfo, type BillingInterval, type BillingMockAction, type BillingPlan, type BillingUsage, type ChannelStatusInfo, type KnowledgeKind, type KnowledgeRecord, type OrganizationInfo, type PlanPrice, type SubscriptionInfo, type TeamMember, type TeamRole } from "./api-client";
+import { api, type ActiveSessionInfo, type ApiContact, type ApiConversation, type ApiDashboard, type ApiMessage, type AuditLogInfo, type BillingInterval, type BillingMockAction, type BillingPlan, type BillingUsage, type ChannelStatusInfo, type KnowledgeKind, type KnowledgeRecord, type OrganizationInfo, type PlanPrice, type SessionInfo, type SubscriptionInfo, type TeamMember, type TeamRole } from "./api-client";
 
 type Channel = "instagram" | "whatsapp" | "facebook";
 type Temperature = "Frío" | "Tibio" | "Caliente";
@@ -86,16 +86,27 @@ export default function NexoApp() {
   const [appointments, setAppointments] = useState<number>(0);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [modal, setModal] = useState(false);
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [organization, setOrganization] = useState<OrganizationInfo | null>(null);
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   useEffect(() => {
     let cancelled = false;
     api.session()
-      .then(() => { if (!cancelled) { window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); setLoggedIn(true); } })
-      .catch(() => { if (!cancelled) { window.localStorage.removeItem("nextio_session_hint"); document.documentElement.removeAttribute("data-nextio-session"); setLoggedIn(false); } })
+      .then(async (principal) => {
+        const currentOrganization = await api.organization();
+        if (!cancelled) {
+          setSession(principal);
+          setOrganization(currentOrganization);
+          window.localStorage.setItem("nextio_session_hint","1");
+          document.documentElement.setAttribute("data-nextio-session","1");
+          setLoggedIn(true);
+        }
+      })
+      .catch(() => { if (!cancelled) { setSession(null); setOrganization(null); window.localStorage.removeItem("nextio_session_hint"); document.documentElement.removeAttribute("data-nextio-session"); setLoggedIn(false); } })
       .finally(() => { if (!cancelled) setSessionChecked(true); });
     return () => { cancelled = true; };
-  }, []);
+  }, [loggedIn]);
   useEffect(() => {
     if (!loggedIn) return;
     let cancelled = false;
@@ -145,6 +156,8 @@ export default function NexoApp() {
     setConversations([]);
     setActiveId("");
     setDashboardMetrics(null);
+    setSession(null);
+    setOrganization(null);
     setAppointments(0);
     setSidebar(false);
     setProfileMenu(false);
@@ -152,20 +165,23 @@ export default function NexoApp() {
   if (!sessionChecked) return <div className="boot-screen"><div className="brand"><span className="brand-mark">n</span><span>next.io <span>by Mercadia</span></span></div><p>Validando sesion...</p></div>;
   if (!loggedIn) return <PublicSite onLogin={async(email,password,remember) => { await api.login(email,password,remember); setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} onRegister={async(data) => { await api.register(data); setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} />;
   const active = conversations.find(c => c.id === activeId) ?? conversations[0];
+  const userName = session?.name || "Cuenta";
+  const userInitials = initials(userName);
+  const roleLabel = session?.role === "SUPER_ADMIN" ? "Superadministrador" : session?.role === "ORGANIZATION_ADMIN" ? "Administrador" : session?.role === "SUPERVISOR" ? "Supervisor" : "Agente";
   const go = (v: View) => { setView(v); window.localStorage.setItem("nextio_current_view", v); setSidebar(false); };
 
   return <div className="app-shell">
     <aside className={`sidebar ${sidebar ? "open" : ""}`}>
       <div className="brand"><span className="brand-mark">n</span><span>next.io <span>by Mercadia</span></span></div>
-      <button className="workspace"><span className="workspace-logo">NX</span><span><b>Mercadia Ops</b><small>Growth stack · Live data</small></span><span>⌄</span></button>
+      <button className="workspace"><span className="workspace-logo">NX</span><span><b>{organization?.name || "Mi organización"}</b><small>Datos de tu espacio de trabajo</small></span><span>⌄</span></button>
       <nav>{nav.map(item => <button key={item.label} className={view === item.label ? "active" : ""} onClick={() => go(item.label)}><i>{item.icon}</i>{item.label}{item.label === "Conversaciones" && <em>{conversations.length}</em>}</button>)}</nav>
       <div className="sidebar-bottom">
         <button className="local-pill" onClick={() => notify("Sesion activa")} aria-label="Datos reales"><span /> Datos reales</button>
-        <div className="profile-wrap"><button className="profile" onClick={() => setProfileMenu(!profileMenu)}><span className="avatar small">LN</span><span><b>Leniel</b><small>Administrador</small></span><span>•••</span></button>{profileMenu&&<div className="profile-menu"><button onClick={logout}>Cerrar sesión</button></div>}</div>
+        <div className="profile-wrap"><button className="profile" onClick={() => setProfileMenu(!profileMenu)}><span className="avatar small">{userInitials}</span><span><b>{userName}</b><small>{roleLabel}</small></span><span>•••</span></button>{profileMenu&&<div className="profile-menu"><button onClick={logout}>Cerrar sesión</button></div>}</div>
       </div>
     </aside>
     <main className="main">
-      <header className="topbar"><button className="mobile-menu" onClick={() => setSidebar(!sidebar)}>☰</button><div><h1>{view}</h1><p>{subtitle(view)}</p></div><div className="top-actions"><span className="status"><i /> Sistema operativo</span><button className="icon-button" onClick={() => notify("No tienes notificaciones nuevas")}>♢</button><button className="avatar">LN</button></div></header>
+      <header className="topbar"><button className="mobile-menu" onClick={() => setSidebar(!sidebar)}>☰</button><div><h1>{view}</h1><p>{subtitle(view)}</p></div><div className="top-actions"><span className="status"><i /> Sistema operativo</span><button className="icon-button" onClick={() => notify("No tienes notificaciones nuevas")}>♢</button><button className="avatar">{userInitials}</button></div></header>
       <div className="content">
         {view === "Inicio" && <Dashboard onNavigate={go} appointments={appointments} metrics={dashboardMetrics} />}
         {view === "Conversaciones" && (active ? <Inbox conversations={conversations} setConversations={setConversations} active={active} setActiveId={setActiveId} notify={notify} onAppointment={() => setModal(true)} /> : <EmptyState title="Sin conversaciones todavía" note="Cuando conectes canales reales o cargues conversaciones, aparecerán aquí. No se muestran datos inventados en cuentas nuevas." />)}
@@ -468,6 +484,11 @@ function ChannelsFixed2({notify}:{notify:(s:string)=>void}) {
   useEffect(()=>{void load()},[]);
   const connect=async(channel:Channel)=>{
     try{
+      if(channel==="instagram"){
+        const {authorizationUrl}=await api.startInstagramAuthorization();
+        window.location.assign(authorizationUrl);
+        return;
+      }
       const result=await api.channelConnect(channel.toUpperCase() as any);
       setChannels(current=>({...current,[channel]:result}));
       notify(result.message);
@@ -702,7 +723,7 @@ function BillingPanel({notify}:{notify:(s:string)=>void}) {
   const [usage,setUsage]=useState<BillingUsage|null>(null);
   const [interval,setInterval]=useState<"MONTHLY"|"YEARLY">("MONTHLY");
   const [loading,setLoading]=useState(true);
-  useEffect(()=>{let cancelled=false;async function load(){setLoading(true);try{const [planList,current,currentUsage]=await Promise.all([api.billingPlans(),api.billingSubscription(),api.billingUsage()]);if(cancelled)return;setPlans(planList);setSubscription(current);setUsage(currentUsage);setInterval(current.planPrice.interval)}catch(reason){notify(reason instanceof Error?reason.message:"No se pudo cargar facturacion")}finally{if(!cancelled)setLoading(false)}}void load();return()=>{cancelled=true}},[]);
+  useEffect(()=>{let cancelled=false;async function load(){setLoading(true);try{const params=new URLSearchParams(window.location.search);const checkoutSessionId=params.get("session_id");if(params.get("stripe")==="success"&&checkoutSessionId){const result=await api.reconcileStripeCheckout(checkoutSessionId);notify(result.completed?"Stripe confirmo la tarjeta y el plan.":"Stripe aun no confirma el Checkout.");window.history.replaceState({},"",window.location.pathname);}const [planList,current,currentUsage]=await Promise.all([api.billingPlans(),api.billingSubscription(),api.billingUsage()]);if(cancelled)return;setPlans(planList);setSubscription(current);setUsage(currentUsage);setInterval(current.planPrice.interval)}catch(reason){notify(reason instanceof Error?reason.message:"No se pudo cargar facturacion")}finally{if(!cancelled)setLoading(false)}}void load();return()=>{cancelled=true}},[]);
   const visiblePlans=plans.filter(plan=>plan.interval===interval);
   const checkout=async(plan:PlanPrice)=>{try{const result=await api.billingCheckout(plan.id);if(result.checkoutUrl){notify(`Abriendo Stripe para ${planName(plan.plan)}`);window.location.href=result.checkoutUrl;return;}notify(result.message)}catch(reason){notify(reason instanceof Error?reason.message:"No se pudo preparar checkout")}};
   if(loading&&!subscription)return <div className="empty"><b>Cargando facturacion...</b><span>Sincronizando trial, uso y planes.</span></div>;

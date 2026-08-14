@@ -38,6 +38,7 @@ export type OrganizationInfo = {
   notificationSettings?: Record<string, unknown> | null;
   securitySettings?: Record<string, unknown> | null;
 };
+export type SessionInfo = { userId: string; organizationId: string; role: string; email: string; name: string };
 export type ActiveSessionInfo = { id: string; createdAt: string; lastSeenAt: string; expiresAt: string; current: boolean; device: string; location: string };
 export type AuditLogInfo = { id: string; action: string; entityType: string; entityId?: string | null; metadata?: unknown; createdAt: string };
 export type ApiMessage = {
@@ -109,7 +110,7 @@ export const api = {
   register: (data: { name: string; email: string; password: string; businessName: string; plan: BillingPlan; interval: BillingInterval }) => request<{ role: string; requiresOrganizationSelection: boolean; trialEndsAt: string }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   forgotPassword: (email: string) => request<{ ok: boolean; message: string; resetToken?: string }>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token: string, password: string) => request<{ ok: boolean }>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) }),
-  session: () => request<{ userId: string; organizationId: string; role: string }>("/auth/session"),
+  session: () => request<SessionInfo>("/auth/session"),
   logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST" }),
   dashboard: () => request<ApiDashboard>("/dashboard"),
   organization: () => request<OrganizationInfo>("/organization/current"),
@@ -123,6 +124,7 @@ export const api = {
   channelDisconnect: (channel: ChannelStatusInfo["channel"]) => request<ChannelStatusInfo>(`/channels/${channel}/disconnect`, { method: "POST" }),
   channelTest: (channel: ChannelStatusInfo["channel"]) => request<ChannelStatusInfo>(`/channels/${channel}/test`, { method: "POST" }),
   syncInstagram: () => request<MetaSyncResult>("/meta/instagram/sync", { method: "POST" }),
+  startInstagramAuthorization: () => request<{ authorizationUrl: string }>("/meta/instagram/start"),
   contacts: (page = 1, search = "") => request<ApiPage<ApiContact>>(`/contacts?page=${page}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
   createContact: (data: { firstName: string; lastName?: string; email?: string; phone?: string; leadTemperature?: ApiContact["leadTemperature"]; leadScore?: number }) => request<ApiContact>("/contacts", { method: "POST", body: JSON.stringify(data) }),
   updateContact: (id: string, data: Partial<ApiContact>) => request<ApiContact>(`/contacts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
@@ -147,6 +149,7 @@ export const api = {
   billingSubscription: () => request<SubscriptionInfo>("/billing/subscription"),
   billingUsage: () => request<BillingUsage>("/billing/usage"),
   billingCheckout: (planPriceId: string) => request<{ provider: string; status: string; checkoutUrl: string | null; message: string; planPrice: PlanPrice }>("/billing/checkout", { method: "POST", body: JSON.stringify({ planPriceId }) }),
+  reconcileStripeCheckout: (sessionId: string) => request<{ completed: boolean; status?: string }>("/billing/stripe/reconcile", { method: "POST", body: JSON.stringify({ sessionId }) }),
   billingSimulate: (action: BillingMockAction, planPriceId?: string) => request<{ provider: string; mode: string; action: BillingMockAction; stripeTouched: boolean; message: string; subscription: SubscriptionInfo }>("/billing/simulate", { method: "POST", body: JSON.stringify({ action, planPriceId }) }),
   activeSessions: () => request<ActiveSessionInfo[]>("/security/sessions"),
   revokeOtherSessions: () => request<{ ok: boolean }>("/security/sessions/revoke-others", { method: "POST" }),
