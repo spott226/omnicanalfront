@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npx next build"
+  "buildCommand": "npx next build",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://omnicanal-production-705f.up.railway.app/api/:path*"
+    }
+  ]
 }
