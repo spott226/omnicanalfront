@@ -93,15 +93,18 @@ export default function NexoApp() {
   useEffect(() => {
     let cancelled = false;
     api.session()
-      .then(async (principal) => {
-        const currentOrganization = await api.organization();
+      .then((principal) => {
         if (!cancelled) {
           setSession(principal);
-          setOrganization(currentOrganization);
           window.localStorage.setItem("nextio_session_hint","1");
           document.documentElement.setAttribute("data-nextio-session","1");
           setLoggedIn(true);
         }
+        void api.organization().then((currentOrganization) => {
+          if (!cancelled) setOrganization(currentOrganization);
+        }).catch(() => {
+          if (!cancelled) setOrganization(null);
+        });
       })
       .catch(() => { if (!cancelled) { setSession(null); setOrganization(null); window.localStorage.removeItem("nextio_session_hint"); document.documentElement.removeAttribute("data-nextio-session"); setLoggedIn(false); } })
       .finally(() => { if (!cancelled) setSessionChecked(true); });
