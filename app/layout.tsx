@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://omnicanalfront.vercel.app"),
   title: "next.io by Mercadia — AI customer ops",
   description: "Centraliza conversaciones, califica prospectos y agenda citas con IA.",
   icons: { icon: "/favicon.svg" },

@@ -107,7 +107,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   login: (email: string, password: string, remember = false) => request<{ role: string; requiresOrganizationSelection: boolean }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password, remember }) }),
-  register: (data: { name: string; email: string; password: string; businessName: string; plan: BillingPlan; interval: BillingInterval }) => request<{ role: string; requiresOrganizationSelection: boolean; trialEndsAt: string }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+  register: (data: { name: string; email: string; password: string; businessName: string; plan: BillingPlan; interval: BillingInterval; startWithTrial: boolean }) => request<{ role: string; requiresOrganizationSelection: boolean; trialEndsAt: string; startsWithTrial: boolean }>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   forgotPassword: (email: string) => request<{ ok: boolean; message: string; resetToken?: string }>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token: string, password: string) => request<{ ok: boolean }>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) }),
   session: () => request<SessionInfo>("/auth/session"),
