@@ -105,6 +105,12 @@ export default function NexoApp() {
         }).catch(() => {
           if (!cancelled) setOrganization(null);
         });
+        void api.billingSubscription().then((subscription) => {
+          if (!cancelled && subscription.status === "TRIALING" && subscription.trialExpired) {
+            setView("Plan y facturación");
+            window.localStorage.setItem("nextio_current_view", "Plan y facturación");
+          }
+        }).catch(() => undefined);
       })
       .catch(() => { if (!cancelled) { setSession(null); setOrganization(null); window.localStorage.removeItem("nextio_session_hint"); document.documentElement.removeAttribute("data-nextio-session"); setLoggedIn(false); } })
       .finally(() => { if (!cancelled) setSessionChecked(true); });
@@ -732,8 +738,11 @@ function BillingPanel({notify}:{notify:(s:string)=>void}) {
   if(loading&&!subscription)return <div className="empty"><b>Cargando facturacion...</b><span>Sincronizando trial, uso y planes.</span></div>;
   const conversationLimit=usage?.conversationLimit??subscription?.trialConversationLimit??subscription?.planPrice.monthlyContactsLimit??0;
   const stripeLinked=Boolean(subscription?.stripeSubscriptionId);
-  const statusLabel=subscription?.status==="TRIALING" ? (stripeLinked ? "PRUEBA CON TARJETA" : "PRUEBA ACTIVA") : subscription?.status==="ACTIVE" ? "PLAN ACTIVO" : "REVISAR PAGO";
-  const statusCopy=subscription?.status==="TRIALING"
+  const trialExpired=subscription?.status==="TRIALING"&&subscription.trialExpired;
+  const statusLabel=trialExpired ? "PRUEBA TERMINADA" : subscription?.status==="TRIALING" ? (stripeLinked ? "PRUEBA CON TARJETA" : "PRUEBA ACTIVA") : subscription?.status==="ACTIVE" ? "PLAN ACTIVO" : "REVISAR PAGO";
+  const statusCopy=trialExpired
+    ? "Tu prueba ya terminó. Elige un plan para activar tu espacio; este Checkout no agrega otra prueba."
+    : subscription?.status==="TRIALING"
     ? stripeLinked
       ? `Quedan ${subscription.trialDaysLeft} dias de prueba. Stripe ya tiene la tarjeta y cobrara al terminar el trial o al vencer el limite de ${subscription.trialConversationLimit} conversaciones.`
       : `Quedan ${subscription.trialDaysLeft} dias de prueba. Incluye hasta ${subscription.trialConversationLimit} conversaciones; agrega tarjeta para cobrar al terminar el trial.`
