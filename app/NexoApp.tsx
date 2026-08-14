@@ -234,6 +234,15 @@ function Login({ onLogin, onRegister }: { onLogin: (email:string,password:string
     const savedEmail=window.localStorage.getItem("nextio_remembered_email");
     if(savedEmail){setEmail(savedEmail);setRemember(true);}
   },[]);
+  const switchMode=(nextMode:"login"|"register")=>{
+    setMode(nextMode);setError("");setPassword("");
+    if(nextMode==="register"){
+      setEmail("");setName("");setBusinessName("");setRemember(false);
+      return;
+    }
+    const savedEmail=window.localStorage.getItem("nextio_remembered_email");
+    setEmail(savedEmail??"");setRemember(Boolean(savedEmail));
+  };
   const submit = async(e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -272,16 +281,16 @@ function Login({ onLogin, onRegister }: { onLogin: (email:string,password:string
       <div className="login-quote"><span>✦</span><h2>Customer ops con IA<br />sin datos inventados.</h2><p>Gestiona conversaciones, equipo, pagos y conocimiento desde un solo workspace.</p><div className="channel-orbit"><b>IG</b><b>WA</b><b>FB</b><i /></div></div>
       <small>Omnichannel AI stack for growth teams</small>
     </div>
-    <div className="login-panel"><form onSubmit={submit} autoComplete="on">
+    <div className="login-panel"><form onSubmit={submit} autoComplete={mode==="login"?"on":"off"}>
       <span className="eyebrow">{mode==="login"?"SECURE WORKSPACE":"MVP ONBOARDING"}</span>
       <h1>{mode==="login"?"Inicia sesion en next.io":"Crea tu cuenta"}</h1>
       <p>{mode==="login"?"Accede a tu operacion comercial.":"Crea tu negocio, elige plan y decide si deseas activar la prueba gratuita."}</p>
-      {mode==="register"&&<><label>Tu nombre<input name="register-name" value={name} onChange={event=>setName(event.target.value)} required /></label><label>Nombre del negocio<input name="register-business" value={businessName} onChange={event=>setBusinessName(event.target.value)} required /></label></>}
-      <label>Correo electronico<input type="email" name="email" autoComplete="username email" value={email} onChange={event=>setEmail(event.target.value)} required /></label>
-      <label>Contrasena<div className="password"><input type="password" name="password" autoComplete={mode==="login"?"current-password":"new-password"} value={password} onChange={event=>setPassword(event.target.value)} required minLength={mode==="register"?10:8}/><span>●</span></div></label>
+      {mode==="register"&&<><label>Tu nombre<input name="register-name" autoComplete="name" value={name} onChange={event=>setName(event.target.value)} required /></label><label>Nombre del negocio<input name="register-business" autoComplete="organization" value={businessName} onChange={event=>setBusinessName(event.target.value)} required /></label></>}
+      <label>Correo electronico<input type="email" name={mode==="login"?"email":"register-email"} autoComplete={mode==="login"?"username":"off"} value={email} onChange={event=>setEmail(event.target.value)} required /></label>
+      <label>Contrasena<div className="password"><input type="password" name={mode==="login"?"password":"register-password"} autoComplete={mode==="login"?"current-password":"new-password"} value={password} onChange={event=>setPassword(event.target.value)} required minLength={mode==="register"?10:8}/><span>●</span></div></label>
       {mode==="register"&&<><div className="form-grid compact"><label>Plan<select value={plan} onChange={event=>{const next=event.target.value as BillingPlan;setPlan(next);if(next==="MICRO")setStartWithTrial(false)}}><option value="MICRO">Micro · 20 conversaciones</option><option value="STARTER">Starter</option><option value="PRO">Growth</option><option value="ENTERPRISE">Advanced</option></select></label><label>Periodo<select value={interval} onChange={event=>setInterval(event.target.value as BillingInterval)}><option value="MONTHLY">Mensual</option><option value="YEARLY">Anual</option></select></label></div>{plan==="MICRO"?<p className="plan-note">Micro se activa despues del pago; no incluye prueba gratuita.</p>:<label className="check trial-choice"><input type="checkbox" checked={startWithTrial} onChange={event=>setStartWithTrial(event.target.checked)} /> Activar prueba gratuita de 7 dias</label>}</>}
       {error&&<p role="alert" className="login-error">{error}</p>}
-      <div className="form-row"><label className="check"><input type="checkbox" checked={remember} onChange={event=>{setRemember(event.target.checked);if(!event.target.checked)window.localStorage.removeItem("nextio_remembered_email");}} /> Recordarme</label><button type="button" className="link" onClick={()=>{setMode(mode==="login"?"register":"login");setError("")}}>{mode==="login"?"Crear cuenta":"Ya tengo cuenta"}</button></div>
+      <div className="form-row">{mode==="login"?<label className="check"><input type="checkbox" checked={remember} onChange={event=>{setRemember(event.target.checked);if(!event.target.checked)window.localStorage.removeItem("nextio_remembered_email");}} /> Recordarme</label>:<span/>}<button type="button" className="link" onClick={()=>switchMode(mode==="login"?"register":"login")}>{mode==="login"?"Crear cuenta":"Ya tengo cuenta"}</button></div>
       {mode==="login"&&<button type="button" className="link forgot-link" onClick={forgot}>Olvide mi contrasena</button>}
       <button className="primary login-submit" disabled={loading}>{loading ? "Procesando..." : mode==="login" ? "Iniciar sesion" : plan==="MICRO" || !startWithTrial ? "Continuar al pago" : "Iniciar prueba gratis"}</button>
       <div className="local-box"><span>●</span><div><b>{mode==="login"?"Sesion protegida":plan==="MICRO" || !startWithTrial?"Pago antes de activar":"Prueba gratuita activa"}</b><p>{mode==="login"?"Recordaremos tu correo. La contrasena la carga el gestor seguro del navegador si decides guardarla.":plan==="MICRO" || !startWithTrial?"Crearás tu cuenta y despues podrás completar el pago de tu plan en Stripe.":"Tu cuenta inicia con trial y puedes agregar tarjeta para cobrar al terminar."}</p></div></div>
