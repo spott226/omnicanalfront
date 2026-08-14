@@ -118,7 +118,7 @@ export default function NexoApp() {
     return () => { cancelled = true; };
   }, [loggedIn]);
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!loggedIn || view === nav[8].label) return;
     let cancelled = false;
     async function loadRealData() {
       try {
@@ -139,7 +139,7 @@ export default function NexoApp() {
     }
     void loadRealData();
     return () => { cancelled = true; };
-  }, [loggedIn]);
+  }, [loggedIn, view]);
   useEffect(() => {
     if (!loggedIn || typeof activeId !== "string") return;
     let cancelled = false;
@@ -173,7 +173,7 @@ export default function NexoApp() {
     setProfileMenu(false);
   };
   if (!sessionChecked) return <div className="boot-screen"><div className="brand"><span className="brand-mark">n</span><span>next.io <span>by Mercadia</span></span></div><p>Validando sesion...</p></div>;
-  if (!loggedIn) return <PublicSite onLogin={async(email,password,remember) => { await api.login(email,password,remember); setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} onRegister={async(data) => { await api.register(data); setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} />;
+  if (!loggedIn) return <PublicSite onLogin={async(email,password,remember) => { await api.login(email,password,remember); setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} onRegister={async(data) => { const registered = await api.register(data); if (!registered.startsWithTrial) { setView(nav[8].label); window.localStorage.setItem("nextio_current_view", nav[8].label); } setLoggedIn(true); window.localStorage.setItem("nextio_session_hint","1"); document.documentElement.setAttribute("data-nextio-session","1"); }} />;
   const active = conversations.find(c => c.id === activeId) ?? conversations[0];
   const userName = session?.name || "Cuenta";
   const userInitials = initials(userName);
