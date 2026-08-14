@@ -182,7 +182,7 @@ export default function NexoApp() {
   return <div className="app-shell">
     <aside className={`sidebar ${sidebar ? "open" : ""}`}>
       <div className="brand"><span className="brand-mark">n</span><span>next.io <span>by Mercadia</span></span></div>
-      <button className="workspace"><span className="workspace-logo">NX</span><span><b>{organization?.name || "Mi organización"}</b><small>Datos de tu espacio de trabajo</small></span><span>⌄</span></button>
+      <button className="workspace" onClick={() => notify("Espacio de trabajo activo")}><span className="workspace-logo">NX</span><span><b>{organization?.name || "Mi organización"}</b><small>Espacio de trabajo</small></span></button>
       <nav>{nav.map(item => <button key={item.label} className={view === item.label ? "active" : ""} onClick={() => go(item.label)}><i>{item.icon}</i>{item.label}{item.label === "Conversaciones" && <em>{conversations.length}</em>}</button>)}</nav>
       <div className="sidebar-bottom">
         <button className="local-pill" onClick={() => notify("Sesion activa")} aria-label="Datos reales"><span /> Datos reales</button>

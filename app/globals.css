@@ -1161,3 +1161,23 @@ body:has(.app-shell) .filters button.active{
   color:#ffffff!important;
   border-color:#37f2ff!important;
 }
+
+/* Sidebar fits a laptop viewport without a second scrollbar. */
+@media (min-width:761px){
+  body:has(.app-shell) .sidebar{
+    overflow:hidden!important;
+    padding:16px 14px 10px;
+  }
+  body:has(.app-shell) .sidebar .brand{font-size:20px;line-height:1.1}
+  body:has(.app-shell) .workspace{
+    grid-template-columns:34px minmax(0,1fr);
+    margin:16px 0 12px;
+    padding:8px 10px;
+  }
+  body:has(.app-shell) .workspace small{white-space:nowrap}
+  body:has(.app-shell) .sidebar nav{gap:2px}
+  body:has(.app-shell) .sidebar nav button{height:42px}
+  body:has(.app-shell) .sidebar-bottom{padding-bottom:0}
+  body:has(.app-shell) .local-pill{padding:6px 8px;font-size:10px}
+  body:has(.app-shell) .profile{min-height:48px;margin-top:8px;padding:8px 6px}
+}
