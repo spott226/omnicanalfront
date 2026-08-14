@@ -45,6 +45,7 @@ export type ApiMessage = {
   id: string;
   content: string;
   senderType: "CONTACT" | "AI" | "USER" | "SYSTEM";
+  status: "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
   createdAt: string;
 };
 export type ApiConversation = {
