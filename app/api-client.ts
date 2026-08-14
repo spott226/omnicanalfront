@@ -114,6 +114,7 @@ export const api = {
   session: () => request<SessionInfo>("/auth/session"),
   logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST" }),
   dashboard: () => request<ApiDashboard>("/dashboard"),
+  superadminOverview: () => request<any>("/superadmin/overview"),
   organization: () => request<OrganizationInfo>("/organization/current"),
   updateOrganization: (data: Partial<OrganizationInfo>) => request<OrganizationInfo>("/organization/current", { method: "PATCH", body: JSON.stringify(data) }),
   teamMembers: () => request<TeamMember[]>("/team/members"),
