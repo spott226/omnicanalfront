@@ -25,8 +25,9 @@ const CHANNELS: Record<Channel, { label: string; short: string }> = { instagram:
 const colors = ["#f4b8a4", "#a9c8ff", "#b8ddc9", "#e9c5ff", "#ffd5a1", "#b8d8ee"];
 const channelFromApi = (channel: string): Channel => channel === "WHATSAPP" ? "whatsapp" : channel === "FACEBOOK" ? "facebook" : "instagram";
 const temperatureFromApi = (temperature: string): Temperature => temperature === "HOT" ? "Caliente" : temperature === "WARM" ? "Tibio" : "Frío";
+const DISPLAY_TIME_ZONE = "America/Mexico_City";
 const messageFromApi = (message: ApiMessage): ChatMessage => ({ body: message.content, from: message.senderType === "CONTACT" ? "contact" : message.senderType === "AI" ? "ai" : "human", time: formatTime(message.createdAt), status: message.status });
-const formatTime = (value?: string | null) => value ? new Date(value).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false }) : "Ahora";
+const formatTime = (value?: string | Date | null) => value ? new Intl.DateTimeFormat("es-MX", { timeZone: DISPLAY_TIME_ZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value)) : "Ahora";
 const fullName = (contact: ApiConversation["contact"]) => {
   const name = `${contact.firstName} ${contact.lastName ?? ""}`.trim();
   if (/^Instagram er-\d+$/i.test(name)) return name.replace("er-", "user-");
@@ -321,7 +322,7 @@ function Inbox({ conversations, setConversations, active, setActiveId, notify, o
   const send = async () => {
     const body = draft.trim();
     if (!body) return;
-    const now = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const now = formatTime(new Date());
     update({ messages: [...active.messages, { body, from: "human", time: now }], last: body, time: "Ahora", unread: 0 });
     setDraft("");
     if (typeof active.id === "string") {
