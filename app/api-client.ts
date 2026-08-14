@@ -126,6 +126,8 @@ export const api = {
   channelTest: (channel: ChannelStatusInfo["channel"]) => request<ChannelStatusInfo>(`/channels/${channel}/test`, { method: "POST" }),
   syncInstagram: () => request<MetaSyncResult>("/meta/instagram/sync", { method: "POST" }),
   startInstagramAuthorization: () => request<{ authorizationUrl: string }>("/meta/instagram/start"),
+  startFacebookAuthorization: () => request<{ authorizationUrl: string }>("/meta/facebook/start"),
+  completeWhatsAppSignup: (data: { authorizationCode: string; wabaId: string; phoneNumberId: string; displayName?: string }) => request<ChannelStatusInfo>("/meta/whatsapp/complete", { method: "POST", body: JSON.stringify(data) }),
   contacts: (page = 1, search = "") => request<ApiPage<ApiContact>>(`/contacts?page=${page}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
   createContact: (data: { firstName: string; lastName?: string; email?: string; phone?: string; leadTemperature?: ApiContact["leadTemperature"]; leadScore?: number }) => request<ApiContact>("/contacts", { method: "POST", body: JSON.stringify(data) }),
   updateContact: (id: string, data: Partial<ApiContact>) => request<ApiContact>(`/contacts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),

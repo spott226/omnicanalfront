@@ -494,6 +494,40 @@ function ChannelsFixed2({notify}:{notify:(s:string)=>void}) {
     }
   };
   useEffect(()=>{void load()},[]);
+  const launchWhatsAppSignup=async()=>{
+    const appId=process.env.NEXT_PUBLIC_META_APP_ID;
+    const configId=process.env.NEXT_PUBLIC_META_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID;
+    if(!appId||!configId){
+      notify("WhatsApp Business requiere configurar NEXT_PUBLIC_META_APP_ID y NEXT_PUBLIC_META_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID en Vercel.");
+      return;
+    }
+    let authorizationCode="";
+    let details:{wabaId:string;phoneNumberId:string;displayName?:string}|null=null;
+    let completed=false;
+    const finish=async()=>{
+      if(completed||!authorizationCode||!details)return;
+      completed=true;
+      try{await api.completeWhatsAppSignup({authorizationCode,...details});notify("WhatsApp Business conectado.");await load();}
+      catch(reason){notify(reason instanceof Error?reason.message:"No se pudo completar WhatsApp Business");}
+      finally{window.removeEventListener("message",onMessage);}
+    };
+    const onMessage=(event:MessageEvent)=>{
+      if(!["https://www.facebook.com","https://web.facebook.com"].includes(event.origin))return;
+      let data:any=event.data;
+      if(typeof data==="string"){try{data=JSON.parse(data)}catch{return;}}
+      if(data?.type!=="WA_EMBEDDED_SIGNUP")return;
+      if(data.event==="FINISH"){details={wabaId:String(data.data?.waba_id??""),phoneNumberId:String(data.data?.phone_number_id??""),displayName:data.data?.phone_number};void finish();}
+      if(data.event==="CANCEL"||data.event==="ERROR"){window.removeEventListener("message",onMessage);notify("Se canceló o falló el registro de WhatsApp Business.");}
+    };
+    window.addEventListener("message",onMessage);
+    const existing=(window as any).FB;
+    if(!existing){
+      await new Promise<void>((resolve,reject)=>{const script=document.createElement("script");script.src="https://connect.facebook.net/es_LA/sdk.js";script.async=true;script.onload=()=>resolve();script.onerror=()=>reject(new Error("No se pudo cargar Meta"));document.body.appendChild(script);});
+    }
+    const fb=(window as any).FB;
+    fb.init({appId,cookie:true,xfbml:false,version:"v23.0"});
+    fb.login((response:any)=>{authorizationCode=String(response?.authResponse?.code??"");if(!authorizationCode){window.removeEventListener("message",onMessage);notify("Meta no devolvió el código de autorización de WhatsApp.");return;}void finish();},{config_id:configId,response_type:"code",override_default_response_type:true,extras:{setup:{}}});
+  };
   const connect=async(channel:Channel)=>{
     try{
       if(channel==="instagram"){
@@ -501,9 +535,14 @@ function ChannelsFixed2({notify}:{notify:(s:string)=>void}) {
         window.location.assign(authorizationUrl);
         return;
       }
-      const result=await api.channelConnect(channel.toUpperCase() as any);
-      setChannels(current=>({...current,[channel]:result}));
-      notify(result.message);
+      if(channel==="facebook"){
+        window.location.assign((await api.startFacebookAuthorization()).authorizationUrl);
+        return;
+      }
+      if(channel==="whatsapp"){
+        await launchWhatsAppSignup();
+        return;
+      }
     }catch(reason){
       notify(reason instanceof Error?reason.message:"No se pudo actualizar el canal");
     }
@@ -619,9 +658,14 @@ function ChannelsFixed({notify}:{notify:(s:string)=>void}) {
   useEffect(()=>{void load()},[]);
   const connect=async(channel:Channel)=>{
     try{
-      const result=await api.channelConnect(channel.toUpperCase() as any);
-      setChannels(current=>({...current,[channel]:result}));
-      notify(result.message);
+      if(channel==="instagram"){
+        window.location.assign((await api.startInstagramAuthorization()).authorizationUrl);
+        return;
+      }
+      if(channel==="facebook"){
+        window.location.assign((await api.startFacebookAuthorization()).authorizationUrl);
+        return;
+      }
     }catch(reason){
       notify(reason instanceof Error?reason.message:"No se pudo actualizar el canal");
     }
